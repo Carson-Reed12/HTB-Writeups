@@ -9,7 +9,7 @@ tags:
   - Proxies
   - Binary_Replacement
 ---
-![Machine Writeups/Linux/Medium/Bamboo/Images/banner.png](Machine Writeups/Linux/Medium/Bamboo/Images/banner.png)
+![Machine Writeups/Linux/Medium/Bamboo/Images/banner.png](https://github.com/Carson-Reed12/HTB-Writeups/blob/main/Linux/Medium/Bamboo/Images/banner.png)
 
 ## User
 ### Port Scan
