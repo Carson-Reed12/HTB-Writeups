@@ -13,7 +13,7 @@ tags:
   - SetOpLock
   - Hard_Coded_Secret
 ---
-![[Machine Writeups/Windows/Easy/Lock/Images/banner.png]]
+![Machine Writeups/Windows/Easy/Lock/Images/banner.png](Images/banner.png)
 
 ## User
 ### Port Scan
@@ -164,49 +164,49 @@ Service detection performed. Please report any incorrect results at https://nmap
 ### Investigating Web Pages and Finding Gitea PAT
 After a quick check that null authentication with SMB didn't work, I began to look at the web pages. The page on port 80 appeared to be relatively static with nothing interesting on it.
 
-![[main site.png]]
+![main site.png](Images/main%20site.png)
 
 Moving on to the web page on port 3000, we're presented with a Gitea instance:
 
-![[gitea front page.png]]
+![gitea front page.png](Images/gitea%20front%20page.png)
 
 We can find a saved repository by clicking on "Explore" and then "dev-scripts" which contains `repos.py`:
 
-![[gitea explore.png]]
+![gitea explore.png](Images/gitea%20explore.png)
 
-![[gitea dev-scripts.png]]
+![gitea dev-scripts.png](Images/gitea%20dev-scripts.png)
 
-![[gitea repos.py link.png]]
+![gitea repos.py link.png](Images/gitea%20repos.py%20link.png)
 
 Clicking inside, we see a generic Python script that uses the Gitea API to pull a repositories list.
 
-![[gitea repos.py code.png]]
+![gitea repos.py code.png](Images/gitea%20repos.py%20code.png)
 
 There's nothing inherently interesting about the script, but on line 29 we notice that a `GITEA_ACCESS_TOKEN` environment variable is being used to pull a personal access token (PAT). Often times, in old commits, these are hard coded before the user thinks to pull it a more secure way. Let's check old commits by clicking on the "History" button:
 
-![[gitea history button.png]]
+![gitea history button.png](Images/gitea%20history%20button.png)
 
 Here we see two commits. Let's choose the oldest commit on the bottom:
 
-![[gitea commits.png]]
+![gitea commits.png](Images/gitea%20commits.png)
 
 As expected, at the top of the file, the PAT is hard coded and leaked to us as `43ce39bb0bd6bc489284f2905f033ca467a6362f`:
 
-![[gitea pat exposure.png]]
+![gitea pat exposure.png](Images/gitea%20pat%20exposure.png)
 
 ### Enumerating Private Repos
 The PAT essentially gives us access to `ellen.freeman`'s Gitea account through APIs and the `git` CLI. Thinking back to his `repos.py` script, it uses the Gitea API to list out his repos. This made me wonder if he had any additional repos that might be private. So, using the PAT and the Gitea API, I queried for `ellen.freeman`'s list of repos using the following `curl` command:
 
 `curl http://10.129.8.162:3000/api/v1/user/repos -H 'Authorization: token 43ce39bb0bd6bc489284f2905f033ca467a6362f'`
 
-![[gitea ugly api.png]]
+![gitea ugly api.png](Images/gitea%20ugly%20api.png)
 
 ... this isn't the prettiest output. After some inspection, we can use `jq` to output only the available repo names:
 
 `curl http://10.129.8.162:3000/api/v1/user/repos -H 'Authorization: token 43ce39bb0bd6bc489284f2905f033ca467a6362f' --silent | jq .[].name
 `
 
-![[gitea api jq.png]]
+![gitea api jq.png](Images/gitea%20api%20jq.png)
 
 Much better. We can see that `ellen.freeman` owns two repos: the previously identified `dev-scripts`, and this new `website` repo. I imagine this contains the code for the boring static page we saw earlier on port 80. Let's pull it and take a look. Again utilizing the PAT we obtained earlier, we can pull the repository with `git`:
 
@@ -215,11 +215,11 @@ Much better. We can see that `ellen.freeman` owns two repos: the previously iden
 ### Uploading an ASP.NET Webshell to the Main Site
 Looking into the new `website` directory that was pulled down, we do confirm that this is just a boring static site. However, the `readme.md` file reveals that a CI/CD pipeline will automatically deploy any additions to the webserver:
 
-![[git clone website.png]]
+![git clone website.png](Images/git%20clone%20website.png)
 
 Let's upload a webshell. Using `whatweb 10.129.8.162` reveals that the site is an ASP.NET site, so we'll search for a specific webshell for it.
 
-![[whatweb aspnet.png]]
+![whatweb aspnet.png](Images/whatweb%20aspnet.png)
 
 I ended up finding a repo [SharPyShell](https://github.com/antonioCoco/SharPyShell) which could be used to generate an ASP.NET webshell. After cloning and installing dependencies on a venv, I used the following command to generate the webshell:
 
@@ -227,7 +227,7 @@ I ended up finding a repo [SharPyShell](https://github.com/antonioCoco/SharPyShe
 
 The generated webshell lands in the `output` folder in the repo. I moved it into the `website` repo and used `git add`, `git commit`, and `git push` to update the remote branch. 
 
-![[add webshell.png]]
+![add webshell.png](Images/add%20webshell.png)
 
 According to the README, this should trigger a pipeline that deploys the change to the actual webserver. We can now try to interact with the webshell by using the `interact` subcommand for `SharPyShell`.
 
@@ -235,12 +235,12 @@ According to the README, this should trigger a pipeline that deploys the change 
 
 This successfully drops us into a pseudo-shell.
 
-![[interact with webshell.png]]
+![interact with webshell.png](Images/interact%20with%20webshell.png)
 
 ### Cracking config.xml for Gale Dekarios's RDP Password
 Looking around `ellen.freeman`'s user directory, there is no user flag on the Desktop. However, there is an interesting `config.xml` file under Documents. Thanks to `SharPyShell`, we can download it using the `#download` command.
 
-![[download config xml.png]]
+![download config xml.png](Images/download%20config%20xml.png)
 
 In the XML, we see an encrypted RDP password for `Gale.Dekarios` and nods to `mRemoteNG` with the `Icon` value:
 
@@ -253,7 +253,7 @@ In the XML, we see an encrypted RDP password for `Gale.Dekarios` and nods to `mR
 
 I did some research on how to decrypt this password and found [mremoteng-decrypt](https://github.com/kmahyyg/mremoteng-decrypt) which did the trick:
 
-![[decrypt pass.png]]
+![decrypt pass.png](Images/decrypt%20pass.png)
 
 Using this decrypted password, we can RDP onto the box as `gale.dekarios` using the following command:
 
@@ -261,18 +261,18 @@ Using this decrypted password, we can RDP onto the box as `gale.dekarios` using 
 
 On the desktop is `user.txt`.
 
-![[gale rdp.png]]
+![gale rdp.png](Images/gale%20rdp.png)
 
 ## Root
 I tried to use my new account to look through SMB shares, but nothing interesting appeared. Looking again at the desktop, we see this `PDF24 Toolbox` application. We can open up PowerShell and get its version with this command (after locating it in `C:\Program Files\PDF24`):
 
 `gci ./pdf24.exe | Format-List VersionInfo`
 
-![[get pdf24 version.png]]
+![get pdf24 version.png](Images/get%20pdf24%20version.png)
 
 Having identified the version as `11.15.1`, it appears that this version of `PDF24` is vulnerable to `CVE-2023-49147`. This [SEC Consult](https://sec-consult.com/vulnerability-lab/advisory/local-privilege-escalation-via-msi-installer-in-pdf24-creator-geek-software-gmbh/) describes the methodology followed to perform the exploit. To start, I found a precomp of `SetOpLock.exe` from [this repo](https://github.com/p1sc3s/Symlink-Tools-Compiled) and pulled it onto the box.
 
-![[get setoplock.png]]
+![get setoplock.png](Images/get%20setoplock.png)
 
 Following along with the instructions, I set the oplock on the `faxPrnInst.log` file with the following command:
 
@@ -284,24 +284,24 @@ The terminal hangs which is normal. Then, continuing to follow the steps, I trig
 
 If you chose to double click the msi instead, go through the wizard by clicking `Next` and then `Repair`. The remaining steps should be relatively the same here onward. After waiting some time, the first prompt asks if we want to auto close apps. We can choose "OK" and then "OK" again.
 
-![[click ok.png]]
-![[click ok again.png]]
+![click ok.png](Images/click%20ok.png)
+![click ok again.png](Images/click%20ok%20again.png)
 
 After some more waiting, a new dialog box for `pdf24-PrinterInstall.exe` should appear. Our `SetOpLock.exe` command from before causes it to hang, and the reason this is good is because, for whatever reason, this process is run as `SYSTEM` and causes the vulnerability. We can right click the top bar and choose "Properties".
 
-![[click properties.png]]
+![click properties.png](Images/click%20properties.png)
 
 Then, we click on "legacy console mode" towards the bottom of the Properties dialog box. When prompted for an app to choose, we'll select Firefox. For whatever reason, Edge and Explorer don't maintain the `SYSTEM` permission level, while Firefox does.
 
-![[click legacy.png]]
+![click legacy.png](Images/click%20legacy.png)
 
-![[choose firefox.png]]
+![choose firefox.png](Images/choose%20firefox.png)
 
 Clicking "OK" will bring up an instance of Firefox. The final step is to press `Ctrl + o` , bringing up the "Open File" dialog box. Enter `cmd.exe` on the top bar and press `Enter`, giving us a `SYSTEM` shell.
 
-![[firefox instructions.png]]
+![firefox instructions.png](Images/firefox%20instructions.png)
 
-![[get root shell.png]]
+![get root shell.png](Images/get%20root%20shell.png)
 
 ## Credential List
 
