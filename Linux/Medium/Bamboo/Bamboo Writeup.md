@@ -39,7 +39,7 @@ Service detection performed. Please report any incorrect results at https://nmap
 ### Discovering PaperCut
 `Squid` is a web proxy that allows one to send requests via the application. For example, we can use `curl` to set the `Squid` application as the proxy and hit our own Python server through it.
 
-![curl proxy.png](https://github.com/Carson-Reed12/HTB-Writeups/blob/main/Linux/Medium/Bamboo/Images/curl proxy.png)
+![curl proxy.png]("https://github.com/Carson-Reed12/HTB-Writeups/blob/main/Linux/Medium/Bamboo/Images/curl proxy.png")
 
 After some research on `Squid 5.9`, it seems that there is some kind of buffer overflow bug. However, it isn't evident how to exploit that on this box. Going a different direction, [this Hacktricks article](https://book.hacktricks.wiki/en/network-services-pentesting/3128-pentesting-squid.html) describes how the `spose` tool can abuse `Squid` to scan internal ports on the box.
 
