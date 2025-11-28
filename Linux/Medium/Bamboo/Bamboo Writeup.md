@@ -45,11 +45,11 @@ After some research on `Squid 5.9`, it seems that there is some kind of buffer o
 
 After cloning and running `spose`, we can see a multitude of internal ports. 
 
-![spose results.png](https://github.com/Carson-Reed12/HTB-Writeups/blob/main/Linux/Medium/Bamboo/Images/spose results.png)
+![spose results.png](Images/spose%20results.png)
 
 To investigate these ports, I started by using `curl` to try and hit them through the `Squid` proxy. After attempting port 9191, it appears `PaperCut` is running on the box.
 
-![papercut discovery.png](https://github.com/Carson-Reed12/HTB-Writeups/blob/main/Linux/Medium/Bamboo/Images/papercut discovery.png)
+![papercut discovery.png](Images/papercut%20discovery.png)
 
 We can utilize `FoxyProxy` in our browser to route through the `Squid` proxy and reach the site.
 
